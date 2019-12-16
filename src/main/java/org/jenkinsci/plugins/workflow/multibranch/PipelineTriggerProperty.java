@@ -3,15 +3,21 @@ package org.jenkinsci.plugins.workflow.multibranch;
 import com.cloudbees.hudson.plugins.folder.AbstractFolder;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.*;
+import hudson.slaves.EnvironmentVariablesNodeProperty;
+import hudson.slaves.NodeProperty;
+import hudson.slaves.NodePropertyDescriptor;
+import hudson.util.DescribableList;
 import jenkins.branch.MultiBranchProject;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -39,6 +45,7 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
     private final int quitePeriod = 0;
     static final String projectNameParameterKey = "SOURCE_PROJECT_NAME";
     static final String projectParentNameParameterKey = "SOURCE_PROJECT_PARENT_NAME";
+    static final String defaultRunOnDeleteJob = "RUN_ON_PIPELINE_DELETE_JOB";
     private String branchIncludeFilter;
     private String branchExcludeFilter;
 
@@ -82,6 +89,27 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
      * @return Full names of the jobs in comma-separated format
      */
     public String getDeleteActionJobsToTrigger() {
+        try {
+            if (deleteActionJobsToTrigger == null || !StringUtils.hasText(deleteActionJobsToTrigger)) {
+                //get it from env variable
+                Jenkins instance = Jenkins.getInstanceOrNull();
+                if (instance != null) {
+                    DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
+                    if(globalNodeProperties!=null){
+                        List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
+                        if(envVarsNodePropertyList!=null){
+                            EnvVars envVars = envVarsNodePropertyList.get(0).getEnvVars();
+                            if(envVars!=null){
+                               deleteActionJobsToTrigger =  envVars.get(defaultRunOnDeleteJob,"");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception ex){
+            LOGGER.log(Level.WARNING, "[MultiBranch Action Triggers Plugin] Could not get global environment variable " + defaultRunOnDeleteJob, ex);
+        }
         return deleteActionJobsToTrigger;
     }
 
