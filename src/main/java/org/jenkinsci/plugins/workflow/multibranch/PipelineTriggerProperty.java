@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.workflow.multibranch;
 import com.cloudbees.hudson.plugins.folder.AbstractFolder;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderProperty;
 import com.cloudbees.hudson.plugins.folder.AbstractFolderPropertyDescriptor;
+
 import hudson.EnvVars;
 import hudson.Extension;
 import hudson.Util;
@@ -45,10 +46,12 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
     private final int quitePeriod = 0;
     static final String projectNameParameterKey = "SOURCE_PROJECT_NAME";
     static final String projectParentNameParameterKey = "SOURCE_PROJECT_PARENT_NAME";
-    static final String defaultRunOnDeleteJob = "RUN_ON_PIPELINE_DELETE_JOB";
+
     private String branchIncludeFilter;
     private String branchExcludeFilter;
 
+    public PipelineTriggerProperty(){
+    }
     /**
      * @param createActionJobsToTrigger  Full names of the jobs in comma separated format which are defined in the field
      * @param deleteActionJobsToTrigger Full names of the jobs in comma separated format which are defined in the field
@@ -62,12 +65,20 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
         this.setBranchExcludeFilter(branchExcludeFilter);
     }
 
+
+
     /**
      * Getter method for @createActionJobsToTrigger
      *
      * @return Full names of the jobs in comma separated format
      */
     public String getCreateActionJobsToTrigger() {
+/*
+        if (!getFirstAccessOfCreate() && (createActionJobsToTrigger == null || !StringUtils.hasText(createActionJobsToTrigger))) {
+            //get it from env variable
+            createActionJobsToTrigger = getEnvironmentVariable(defaultRunOnCreateJob);
+        }
+*/
         return createActionJobsToTrigger;
     }
 
@@ -89,27 +100,11 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
      * @return Full names of the jobs in comma-separated format
      */
     public String getDeleteActionJobsToTrigger() {
-        try {
-            if (deleteActionJobsToTrigger == null || !StringUtils.hasText(deleteActionJobsToTrigger)) {
-                //get it from env variable
-                Jenkins instance = Jenkins.getInstanceOrNull();
-                if (instance != null) {
-                    DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
-                    if(globalNodeProperties!=null){
-                        List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
-                        if(envVarsNodePropertyList!=null){
-                            EnvVars envVars = envVarsNodePropertyList.get(0).getEnvVars();
-                            if(envVars!=null){
-                               deleteActionJobsToTrigger =  envVars.get(defaultRunOnDeleteJob,"");
-                            }
-                        }
-                    }
-                }
-            }
+/*
+        if (!getFirstAccessOfDelete() && (deleteActionJobsToTrigger == null || !StringUtils.hasText(deleteActionJobsToTrigger))) {
+            deleteActionJobsToTrigger = getEnvironmentVariable(defaultRunOnDeleteJob);
         }
-        catch (Exception ex){
-            LOGGER.log(Level.WARNING, "[MultiBranch Action Triggers Plugin] Could not get global environment variable " + defaultRunOnDeleteJob, ex);
-        }
+*/
         return deleteActionJobsToTrigger;
     }
 
@@ -167,6 +162,8 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
     @Extension
     public static class DescriptorImpl extends AbstractFolderPropertyDescriptor {
 
+        static final String defaultRunOnDeleteJob = "RUN_ON_PIPELINE_DELETE_JOB";
+        static final String defaultRunOnCreateJob = "RUN_ON_PIPELINE_CREATE_JOB";
         /**
          * @return Property Name
          * @see AbstractFolderPropertyDescriptor
@@ -189,6 +186,35 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
             return WorkflowMultiBranchProject.class.isAssignableFrom(containerType);
         }
 
+        public static String getDefaultRunOnDeleteJob(){
+            return  getEnvironmentVariable(defaultRunOnDeleteJob);
+        }
+        public static String getDefaultRunOnCreateJob(){
+            return  getEnvironmentVariable(defaultRunOnCreateJob);
+        }
+        private static String getEnvironmentVariable(String variableName){
+            String value="";
+            try {
+                Jenkins instance = Jenkins.getInstanceOrNull();
+                if (instance != null) {
+                    DescribableList<NodeProperty<?>, NodePropertyDescriptor> globalNodeProperties = instance.getGlobalNodeProperties();
+                    if (globalNodeProperties != null) {
+                        List<EnvironmentVariablesNodeProperty> envVarsNodePropertyList = globalNodeProperties.getAll(EnvironmentVariablesNodeProperty.class);
+                        if (envVarsNodePropertyList != null) {
+                            EnvVars envVars = envVarsNodePropertyList.get(0).getEnvVars();
+                            if (envVars != null) {
+                                value = envVars.get(variableName, "");
+                            }
+                        }
+                    }
+                }
+            }
+            catch(Exception ex){
+                LOGGER.log(Level.WARNING, "[MultiBranch Action Triggers Plugin] Could not get global environment variable " + variableName, ex);
+            }
+
+            return value;
+        }
         /**
          * Auto complete methods @createActionJobsToTrigger field.
          *
@@ -257,7 +283,6 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
                         }
                         else {
                             parameters.add(new StringParameterDefinition(PipelineTriggerProperty.projectParentNameParameterKey, "", "Parent Project Name, added by Multibranch Pipeline Plugin"));
-//                            job.addProperty(new ParametersDefinitionProperty(new StringParameterDefinition(PipelineTriggerProperty.projectParentNameParameterKey, "", "Parent Project Name, added by Multibranch Pipeline Plugin")));
                             shouldAdd=true;
                         }
 

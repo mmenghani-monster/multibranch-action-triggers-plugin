@@ -13,6 +13,7 @@ public class ExtendedWorkflowMultiBranchProject extends WorkflowMultiBranchProje
 
     @Extension
     public static class ItemListenerImpl extends ItemListener {
+
         @Override
         public void onCreated(Item item) {
             super.onCreated(item);
