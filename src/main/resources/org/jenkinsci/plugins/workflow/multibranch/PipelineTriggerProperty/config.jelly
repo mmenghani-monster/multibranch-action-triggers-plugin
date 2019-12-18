@@ -26,8 +26,8 @@ THE SOFTWARE.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
     <j:set var="descriptor" value="${descriptor}" />
-    <j:set var="defaultCreate" value="${descriptor.getDefaultRunOnCreateJob()}" />
-     <j:set var="defaultDelete" value="${descriptor.getDefaultRunOnDeleteJob()}" />
+    <j:set var="defaultCreate" value="${descriptor.getDefaultCreateActionJobsToTrigger()}" />
+     <j:set var="defaultDelete" value="${descriptor.getDefaultDeleteActionJobsToTrigger()}" />
     <f:section title="${%Pipeline Action Triggers}">
         <f:entry title="${%Pipeline Create Event}" field="createActionJobsToTrigger">
             <f:textbox autoCompleteDelimChar="," checkMethod="post"  default="${defaultCreate}"/>

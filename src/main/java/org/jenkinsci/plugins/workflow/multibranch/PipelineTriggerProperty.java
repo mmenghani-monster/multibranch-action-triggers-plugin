@@ -192,6 +192,7 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
             //return super.configure(req, json);
         }
 
+
         /**
          * Return true if calling class is MultiBranchProject
          *
@@ -204,11 +205,13 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
             return WorkflowMultiBranchProject.class.isAssignableFrom(containerType);
         }
 
-        public  String getDefaultRunOnDeleteJob(){
+
+        public  String getDefaultDeleteActionJobsToTrigger(){
             return  defaultDeleteActionJobsToTrigger;
             //return  getEnvironmentVariable(defaultRunOnDeleteJob);
         }
-        public  String getDefaultRunOnCreateJob(){
+
+        public  String getDefaultCreateActionJobsToTrigger(){
             return  defaultCreateActionJobsToTrigger;
             //return  getEnvironmentVariable(defaultRunOnCreateJob);
         }
