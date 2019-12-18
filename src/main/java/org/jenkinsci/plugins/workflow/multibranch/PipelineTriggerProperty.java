@@ -14,10 +14,12 @@ import hudson.slaves.NodePropertyDescriptor;
 import hudson.util.DescribableList;
 import jenkins.branch.MultiBranchProject;
 import jenkins.model.Jenkins;
+import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.StaplerRequest;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -164,6 +166,12 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
 
         static final String defaultRunOnDeleteJob = "RUN_ON_PIPELINE_DELETE_JOB";
         static final String defaultRunOnCreateJob = "RUN_ON_PIPELINE_CREATE_JOB";
+        String defaultCreateActionJobsToTrigger="";
+        String defaultDeleteActionJobsToTrigger="";
+
+        public DescriptorImpl(){
+            load();
+        }
         /**
          * @return Property Name
          * @see AbstractFolderPropertyDescriptor
@@ -172,6 +180,16 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
         @Override
         public String getDisplayName() {
             return "Pipeline Trigger";
+        }
+
+        @Override
+        public boolean configure(StaplerRequest req, JSONObject json) throws FormException {
+            JSONObject defaults = json.getJSONObject("multibranch-action-triggers-plugin-defaults");
+            defaultCreateActionJobsToTrigger=defaults.getString("defaultCreateActionJobsToTrigger");
+            defaultDeleteActionJobsToTrigger=defaults.getString("defaultDeleteActionJobsToTrigger");
+            save();
+            return  true;
+            //return super.configure(req, json);
         }
 
         /**
@@ -186,11 +204,13 @@ public class PipelineTriggerProperty extends AbstractFolderProperty<MultiBranchP
             return WorkflowMultiBranchProject.class.isAssignableFrom(containerType);
         }
 
-        public static String getDefaultRunOnDeleteJob(){
-            return  getEnvironmentVariable(defaultRunOnDeleteJob);
+        public  String getDefaultRunOnDeleteJob(){
+            return  defaultDeleteActionJobsToTrigger;
+            //return  getEnvironmentVariable(defaultRunOnDeleteJob);
         }
-        public static String getDefaultRunOnCreateJob(){
-            return  getEnvironmentVariable(defaultRunOnCreateJob);
+        public  String getDefaultRunOnCreateJob(){
+            return  defaultCreateActionJobsToTrigger;
+            //return  getEnvironmentVariable(defaultRunOnCreateJob);
         }
         private static String getEnvironmentVariable(String variableName){
             String value="";
